@@ -39,6 +39,11 @@ coala-quickstart automatically creates a .coafile for use by coala.
         '--ci', action='store_const', dest='non_interactive', const=True,
         help='continuous integration run, alias for `--non-interactive`')
 
+    arg_parser.add_argument(
+        '--allow-incomplete-sections', action='store_const',
+        dest='incomplete_sections', const=True,
+        help='generate coafile with only `bears` and `files` field in sections')
+
     return arg_parser
 
 
@@ -69,7 +74,7 @@ def main():
     relevant_bears = filter_relevant_bears(used_languages, arg_parser)
     print_relevant_bears(printer, relevant_bears)
 
-    if args.non_interactive:
+    if args.non_interactive and not args.incomplete_sections:
         unusable_bears = get_non_optional_settings_bears(relevant_bears)
         remove_unusable_bears(relevant_bears, unusable_bears)
         print_relevant_bears(printer, relevant_bears, 'usable')
@@ -78,5 +83,7 @@ def main():
         project_dir,
         project_files,
         ignore_globs,
-        relevant_bears)
+        relevant_bears,
+        args.incomplete_sections)
+
     write_coafile(printer, project_dir, settings)

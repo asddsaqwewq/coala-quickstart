@@ -1,3 +1,4 @@
+import os
 import sys
 import unittest
 from copy import deepcopy
@@ -7,6 +8,8 @@ from coalib.output.printers.LogPrinter import LogPrinter
 from coala_utils.ContextManagers import retrieve_stdout
 from coala_quickstart.generation.Bears import (
     filter_relevant_bears, print_relevant_bears)
+from coala_quickstart.coala_quickstart import main
+
 
 class TestBears(unittest.TestCase):
 
@@ -31,3 +34,28 @@ class TestBears(unittest.TestCase):
             print_relevant_bears(self.printer, filter_relevant_bears(
                 [('Python', 70), ('Unknown', 30)]))
             self.assertIn("PycodestyleBear", custom_stdout.getvalue())
+
+    def test_bears_allow_incomplete_sections_mode(self):
+        sys.argv.append('--ci')
+        sys.argv.append('--allow-incomplete-sections')
+        orig_cwd = os.getcwd()
+        os.chdir(os.path.dirname(os.path.realpath(__file__)))
+        os.chdir("bears_ci_testfiles")
+        with retrieve_stdout() as custom_stdout:
+            main()
+            self.assertNotIn("usable", 
+                custom_stdout.getvalue())
+        os.remove('.coafile')
+        os.chdir(orig_cwd) 
+
+    def test_bears_ci_mode(self):
+        sys.argv.append('--ci')
+        orig_cwd = os.getcwd()
+        os.chdir(os.path.dirname(os.path.realpath(__file__)))
+        os.chdir("bears_ci_testfiles")
+        with retrieve_stdout() as custom_stdout:
+            main()
+            self.assertIn("usable", 
+                custom_stdout.getvalue())
+        os.remove('.coafile')
+        os.chdir(orig_cwd)   

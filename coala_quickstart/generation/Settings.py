@@ -66,7 +66,8 @@ def generate_ignore_field(project_dir, languages, extset, ignore_globs):
     return ", ".join(ignores)
 
 
-def generate_settings(project_dir, project_files, ignore_globs, relevant_bears):
+def generate_settings(project_dir, project_files, ignore_globs, relevant_bears,
+                      incomplete_sections=False):
     """
     Generates the settings for the given project.
 
@@ -78,6 +79,17 @@ def generate_settings(project_dir, project_files, ignore_globs, relevant_bears):
         The list of ignore glob expressions.
     :param relevant_bears:
         A dict with language name as key and bear classes as value.
+    :param incomplete_sections:
+        When bears with non optional settings are found, user is asked for
+        setting value of non optional bears and then a ``Section`` object
+        having ``files`` field, ``bears`` field and settings, is returned.
+        If incomplete_sections is set to ``True``, then no user input will
+        be asked and a ``Section`` object having only the ``files`` and
+        ``bears`` field will be returned.
+
+        In CI mode, bears with non optional setting are not added in coafile.
+        But if incomplete_sections is set to ``True`` in CI mode, then those
+        bears are also added in the coafile.
     :return:
         A dict with section name as key and a ``Section`` object as value.
     """
@@ -106,7 +118,9 @@ def generate_settings(project_dir, project_files, ignore_globs, relevant_bears):
                 relevant_bears[lang_map[lang]])
 
     log_printer = LogPrinter(ConsolePrinter())
-    fill_settings(settings, acquire_settings, log_printer)
+
+    if not incomplete_sections:
+        fill_settings(settings, acquire_settings, log_printer)
 
     return settings
 
