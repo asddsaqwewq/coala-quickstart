@@ -9,4 +9,4 @@ if [ "$system_os" == "LINUX" ] ; then
   args+=('--doctest-modules')
 fi
 
-python3 -m pytest "${args[@]}"
+python -m pytest "${args[@]}"

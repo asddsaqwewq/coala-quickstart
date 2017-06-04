@@ -1,0 +1,33 @@
+sudo: false
+language: python
+python:
+  - 3.4
+  - 3.5
+  - 3.6
+
+cache:
+  pip: true
+
+before_install:
+  # Use pip 9, so that setuptools can be downgraded.
+  - pip install pip==9 setuptools==17
+  - pip install -r requirements.txt
+  - pip install -r test-requirements.txt
+
+script:
+  - bash .ci/tests.sh
+  - pip install -e .
+  - pip install coala-bears[alldeps] --pre -U
+  # https://github.com/coala/coala-bears/issues/1037
+  - >
+    if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then
+      sed -i.bak '/bears = GitCommitBear/d' .coafile
+    fi
+  - coala --non-interactive
+
+notifications:
+  email: false
+
+branches:
+  exclude:
+    - /^sils\//
