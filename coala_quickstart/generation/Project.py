@@ -14,8 +14,6 @@ def valid_path(path: StringConverter):
     >>> from coala_utils.string_processing.StringConverter import (
     ...     StringConverter)
     >>> import os
-    >>> valid_path(StringConverter("/tmp"))
-    '/tmp'
     >>> os.getcwd() == valid_path(StringConverter(""))
     True
     >>> valid_path(StringConverter("invalid_dir"))
