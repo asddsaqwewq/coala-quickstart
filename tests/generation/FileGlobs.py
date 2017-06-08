@@ -31,10 +31,10 @@ class TestQuestion(unittest.TestCase):
 
         with suppress_stdout(), simulate_console_inputs("ignore_dir/**"):
             res, _ = get_project_files(self.log_printer, self.printer, os.getcwd())
-            self.assertIn(os.path.join(os.getcwd(), "src", "file.c"), res)
-            self.assertIn(os.path.join(os.getcwd(), "root.c"), res)
-            self.assertNotIn(os.path.join(os.getcwd(), "ignore_dir/src.c"), res)
-            self.assertNotIn(os.path.join(os.getcwd(), "ignore_dir/src.js"), res)
+            self.assertIn(os.path.normcase(os.path.join(os.getcwd(), "src", "file.c")), res)
+            self.assertIn(os.path.normcase(os.path.join(os.getcwd(), "root.c")), res)
+            self.assertNotIn(os.path.normcase(os.path.join(os.getcwd(), "ignore_dir/src.c")), res)
+            self.assertNotIn(os.path.normcase(os.path.join(os.getcwd(), "ignore_dir/src.js")), res)
 
         os.chdir(orig_cwd)
 
@@ -83,7 +83,7 @@ __pycache__
             [os.path.join(os.getcwd(), "**")],
             self.log_printer,
             ignored_file_paths=globs)
-        files = [os.path.abspath(file) for file in files]
+        files = [os.path.normcase(os.path.abspath(file)) for file in files]
         ignored_files = [os.path.abspath(file) for file in ignored_files]
         self.maxDiff = None
         self.assertEqual(sorted(files), sorted(returned_files))
@@ -100,15 +100,21 @@ __pycache__
 
     def test_get_project_files_ci_mode(self):
         orig_cwd = os.getcwd()
-        os.chdir(os.path.dirname(os.path.realpath(__file__)) + 
+        os.chdir(os.path.dirname(os.path.realpath(__file__)) +
             os.sep + "file_globs_ci_testfiles")
 
         with suppress_stdout():
             res, _ = get_project_files(self.log_printer, self.printer, os.getcwd()
                 , True)
-            self.assertIn(os.path.join(os.getcwd(), "src", "file.c"), res)
-            self.assertIn(os.path.join(os.getcwd(), "root.c"), res)
-            self.assertIn(os.path.join(os.getcwd(), "ignore_dir", "src.c"), res)
-            self.assertIn(os.path.join(os.getcwd(), "ignore_dir", "src.js"), res)
+
+            paths = [
+                os.path.join(os.getcwd(), "src", "file.c"),
+                os.path.join(os.getcwd(), "root.c"),
+                os.path.join(os.getcwd(), "ignore_dir", "src.c"),
+                os.path.join(os.getcwd(), "ignore_dir", "src.js")
+            ]
+
+            for path in paths:
+                self.assertIn(os.path.normcase(path), res)
 
         os.chdir(orig_cwd)
