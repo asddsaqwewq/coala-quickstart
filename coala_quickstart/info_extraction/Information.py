@@ -8,12 +8,12 @@ from dependency_management.requirements.PackageRequirement import (
 
 class LicenseUsedInfo(Info):
     description = "License of the project."
-    value_type = [""]
+    value_type = [str]
 
 
 class LinterUsedInfo(Info):
     description = "Linter used in project."
-    value_type = ["", PackageRequirement, ExecutableRequirement]
+    value_type = [str, PackageRequirement, ExecutableRequirement]
 
     def __init__(self,
                  source,
