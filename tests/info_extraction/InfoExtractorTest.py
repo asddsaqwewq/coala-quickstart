@@ -98,6 +98,11 @@ class InfoExtractorTest(unittest.TestCase):
                 self.assertIsInstance(
                     extracted_info[tf]['DummyInfo'][0],
                     self.DummyInfo)
+                self.assertEqual(
+                    extracted_info[tf]['DummyInfo'][0].source, tf)
+                self.assertEqual(
+                    extracted_info[tf]['DummyInfo'][0].extractor,
+                    "DummyInfoExtractor")
 
     def test_multiple_information(self):
 

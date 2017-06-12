@@ -37,6 +37,8 @@ class InfoExtractor:
         :param info: Collection of ``Info`` instances.
         """
         for info in info_to_add:
+            if not info.extractor:
+                info.extractor = self.__class__.__name__
             if self._information.get(fname):
                 if self._information[fname].get(info.name):
                     self._information[fname][info.name].append(info)
