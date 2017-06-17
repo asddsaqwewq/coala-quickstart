@@ -19,7 +19,7 @@ class InfoExtractorTest(unittest.TestCase):
 
         class DummyInfoExtractor(InfoExtractor):
 
-            def parse_file(self, file_content):
+            def parse_file(self, fname, file_content):
                 return file_content
 
             def find_information(self, fname, parsed_file):
@@ -29,7 +29,7 @@ class InfoExtractorTest(unittest.TestCase):
 
         class DummyMultiInfoExtractor(InfoExtractor):
 
-            def parse_file(self, file_content):
+            def parse_file(self, fname, file_content):
                 return file_content
 
             def find_information(self, fname, parsed_file):
@@ -46,7 +46,7 @@ class InfoExtractorTest(unittest.TestCase):
 
         class NoInfoExtractor(InfoExtractor):
 
-            def parse_file(self, file_content):
+            def parse_file(self, fname, file_content):
                 return file_content
 
             def find_information(self, fname, parsed_file):
@@ -63,7 +63,7 @@ class InfoExtractorTest(unittest.TestCase):
             ['**'],
             self.current_dir)
 
-        self.assertRaises(NotImplementedError, uut.parse_file, '')
+        self.assertRaises(NotImplementedError, uut.parse_file, 'foo', '')
         self.assertRaises(
             NotImplementedError,
             uut.find_information,

@@ -25,7 +25,7 @@ class InfoExtractor:
         """
         return self._information
 
-    def parse_file(self, file_content):
+    def parse_file(self, fname, file_content):
         """
         Parses the given file and returns the parsed file.
         """
@@ -61,7 +61,7 @@ class InfoExtractor:
 
         for fname in filenames:
             with open(fname, 'r') as f:
-                pfile = self.parse_file(f.read())
+                pfile = self.parse_file(fname, f.read())
                 file_info = self.find_information(fname, pfile)
                 if file_info:
                     self._add_info(fname, file_info)
