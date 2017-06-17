@@ -27,6 +27,7 @@ class InfoExtractorTest(unittest.TestCase):
                     fname,
                     'Dummy information it is!')]
 
+
         class DummyMultiInfoExtractor(InfoExtractor):
 
             def parse_file(self, fname, file_content):
@@ -52,10 +53,22 @@ class InfoExtractorTest(unittest.TestCase):
             def find_information(self, fname, parsed_file):
                 return []
 
+        class TempfileExtractor(InfoExtractor):
+            supported_file_globs = ("tempfile**", "**tempfile")
+
+            def parse_file(self, fname, file_content):
+                return file_content
+
+            def find_information(self, fname, parsed_file):
+                return [DummyInfo(
+                            fname,
+                            'Some random information it is!')]
+
         self.DummyInfo = DummyInfo
         self.DummyInfoExtractor = DummyInfoExtractor
         self.DummyMultiInfoExtractor = DummyMultiInfoExtractor
         self.NoInfoExtractor = NoInfoExtractor
+        self.TempfileExtractor = TempfileExtractor
 
     def test_implementation(self):
 
@@ -79,14 +92,14 @@ class InfoExtractorTest(unittest.TestCase):
 
         target_file_contents = ['Some content.', 'Any content', 'More content']
 
-        uut = self.DummyInfoExtractor(
-            ['target_file_**', 'another_target_file'],
-            self.current_dir)
-
         with generate_files(
                 target_filenames,
                 target_file_contents,
                 self.current_dir) as gen_files:
+
+            uut = self.DummyInfoExtractor(
+                ['target_file_**', 'another_target_file'],
+                self.current_dir)
 
             extracted_info = uut.extract_information()
 
@@ -113,14 +126,14 @@ class InfoExtractorTest(unittest.TestCase):
 
         target_file_contents = ['Some content.']
 
-        uut = self.DummyMultiInfoExtractor(
-            ['target_file_**', 'another_target_file'],
-            self.current_dir)
-
         with generate_files(
                 target_filenames,
                 target_file_contents,
                 self.current_dir) as gen_files:
+
+            uut = self.DummyMultiInfoExtractor(
+                ['target_file_**', 'another_target_file'],
+                self.current_dir)
 
             extracted_info = uut.extract_information()
 
@@ -159,3 +172,38 @@ class InfoExtractorTest(unittest.TestCase):
 
             for tf in target_filenames:
                 self.assertIsNone(extracted_info.get(tf))
+
+    def test_unsupported_files(self):
+        target_filenames = ['tempfile1', '1tempfile', 'tmpfile_not_allowed']
+
+        target_file_contents = ['Some content.', 'More content', 'Content']
+
+        with generate_files(
+                target_filenames,
+                target_file_contents,
+                self.current_dir) as gen_files:
+
+            with self.assertRaisesRegexp(
+                    ValueError,
+                    ("The taraget file tmpfile_not_allowed does not match the "
+                     "supported file globs \('tempfile\*\*', '\*\*tempfile'\) "
+                     "of TempfileExtractor")):
+                uut = self.TempfileExtractor(
+                    ['tempfile1', 'tmpfile_not_allowed'],
+                    self.current_dir)
+
+                uut.extract_information()
+
+            uut = self.TempfileExtractor(
+                ['**tempfile**'],
+                self.current_dir)
+
+            extracted_info = uut.extract_information()
+            self.assertEqual(len(extracted_info.keys()), 2)
+
+            uut = self.TempfileExtractor(
+                ['tempfile1', 'tempfile_not_present'],
+                self.current_dir)
+
+            extracted_info = uut.extract_information()
+            self.assertEqual(len(extracted_info.keys()), 1)

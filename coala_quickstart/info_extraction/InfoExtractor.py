@@ -1,9 +1,11 @@
 import os
 
-from coalib.parsing.Globbing import glob
+from coalib.parsing.Globbing import glob, fnmatch
 
 
 class InfoExtractor:
+    # tuple of file globs supported by the extractor.
+    supported_file_globs = tuple()
 
     def __init__(self,
                  target_globs,
@@ -14,7 +16,16 @@ class InfoExtractor:
         :param project_directory: Absolute path to project directory in which
                                   the target files will be searched.
         """
-        self.target_globs = target_globs
+        target_files = self.retrieve_files(target_globs, project_directory)
+        for fname in target_files:
+            if not fnmatch(fname, self.supported_file_globs):
+                raise ValueError("The taraget file {} does not match the "
+                                 "supported file globs {} of {}".format(
+                                    fname,
+                                    self.supported_file_globs,
+                                    self.__class__.__name__))
+        self.target_files = [
+            os.path.join(project_directory, f) for f in target_files]
         self.directory = project_directory
         self._information = dict()
 
@@ -57,11 +68,10 @@ class InfoExtractor:
         """
         Extracts the information, saves in the object and returns it.
         """
-        filenames = self.retrieve_files(self.target_globs, self.directory)
-
-        for fname in filenames:
-            with open(fname, 'r') as f:
-                pfile = self.parse_file(fname, f.read())
+        for fpath in self.target_files:
+            with open(fpath, 'r') as f:
+                pfile = self.parse_file(fpath, f.read())
+                fname = os.path.relpath(fpath, self.directory)
                 file_info = self.find_information(fname, pfile)
                 if file_info:
                     self._add_info(fname, file_info)

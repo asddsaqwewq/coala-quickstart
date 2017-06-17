@@ -1,3 +1,4 @@
+import os
 import unittest
 
 from coala_quickstart.info_extraction.Info import Info
@@ -21,7 +22,7 @@ class InfoTest(unittest.TestCase):
         self.base_info = Info(
             'source_file',
             'base_info_value',
-            DummyInfoExtractor(['some_file'], 'some_dir'))
+            DummyInfoExtractor(['some_file'], os.getcwd()))
 
         class InfoA(Info):
             description = 'Information A'
