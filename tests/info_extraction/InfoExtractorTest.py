@@ -53,6 +53,20 @@ class InfoExtractorTest(unittest.TestCase):
             def find_information(self, fname, parsed_file):
                 return []
 
+        class WrongSupportedInfoExtractor(InfoExtractor):
+            supported_file_globs = ("**",)
+            supported_info_kinds = (DummyInfoExtractor,)
+
+            def parse_file(self, fname, file_content):
+                return file_content
+
+            def find_information(self, fname, parsed_file):
+                # The extractor returns AnotherDummyInfo instead
+                # of DummyInfo.
+                return [AnotherDummyInfo(
+                            fname,
+                            'Some random information it is!')]
+
         class TempfileExtractor(InfoExtractor):
             supported_file_globs = ("tempfile**", "**tempfile")
 
@@ -69,6 +83,7 @@ class InfoExtractorTest(unittest.TestCase):
         self.DummyMultiInfoExtractor = DummyMultiInfoExtractor
         self.NoInfoExtractor = NoInfoExtractor
         self.TempfileExtractor = TempfileExtractor
+        self.WrongSupportedInfoExtractor = WrongSupportedInfoExtractor
 
     def test_implementation(self):
 
@@ -118,7 +133,6 @@ class InfoExtractorTest(unittest.TestCase):
                 self.assertIsInstance(
                     extracted_info[tf]['DummyInfo'][0].extractor,
                     InfoExtractor)
-
 
     def test_multiple_information(self):
 
@@ -207,3 +221,24 @@ class InfoExtractorTest(unittest.TestCase):
 
             extracted_info = uut.extract_information()
             self.assertEqual(len(extracted_info.keys()), 1)
+
+    def test_supported_info_kinds(self):
+        target_filenames = ['target_file_1', ]
+
+        target_file_contents = ['Some content.']
+
+        with generate_files(
+                target_filenames,
+                target_file_contents,
+                self.current_dir) as gen_files:
+
+            uut = self.WrongSupportedInfoExtractor(
+            ['target_file_**'],
+            self.current_dir)
+
+            with self.assertRaisesRegexp(
+                    ValueError,
+                    ("The class AnotherDummyInfo is not present in supported "
+                     "information kinds of WrongSupportedInfoExtractor")):
+
+                uut.extract_information()

@@ -1,11 +1,15 @@
 import os
 
 from coalib.parsing.Globbing import glob, fnmatch
+from coala_quickstart.info_extraction.Info import Info
 
 
 class InfoExtractor:
     # tuple of file globs supported by the extractor.
     supported_file_globs = tuple()
+
+    # tuple of ``Info`` classes that can be extracted.
+    supported_info_kinds = (Info,)
 
     def __init__(self,
                  target_globs,
@@ -52,6 +56,11 @@ class InfoExtractor:
         :param info_to_add: list of ``Info`` instances to add.
         """
         for info in info_to_add:
+            if not isinstance(info, self.supported_info_kinds):
+                raise ValueError("The class {} is not present in "
+                                 "supported information kinds of {}".format(
+                                    info.name,
+                                    self.__class__.__name__))
             if not info.extractor:
                 info.extractor = self
             if self._information.get(fname):
