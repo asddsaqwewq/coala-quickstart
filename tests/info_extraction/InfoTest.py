@@ -56,7 +56,8 @@ class InfoTest(unittest.TestCase):
     def test_value_type(self):
         with self.assertRaisesRegexp(
                 TypeError,
-                'The value 5.5 does not match the allowed value types'):
+                "value must be an instance of one of "
+                "\(<class 'str'>, <class 'int'>\) \(provided value: 5.5\)"):
             self.InfoA("source_file", 5.5)
 
         self.InfoB("source_file", 5.5)

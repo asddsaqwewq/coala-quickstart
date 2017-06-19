@@ -1,7 +1,10 @@
+from coala_quickstart.info_extraction.Utilities import assert_type_signature
+
+
 class Info:
     description = 'Some information'
 
-    # tuple of allowed types for the information value.
+    # type signature for the information value.
     value_type = (object,)
 
     def __init__(self,
@@ -18,9 +21,7 @@ class Info:
         if not self.value_type:
             self.value_type = (object,)
 
-        if not isinstance(value, self.value_type):
-            raise TypeError("The value {} does not match the allowed "
-                            "value types {}".format(value, self.value_type))
+        assert_type_signature(value, self.value_type, "value")
         self.source = source
         self._value = value
         self.extractor = extractor
