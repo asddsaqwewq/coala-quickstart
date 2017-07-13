@@ -10,13 +10,18 @@ def generate_files(fnames, file_contents, directory=os.getcwd()):
     :param fnames:        list of file names to create.
     :param file_contents: list of strings containing content
                           corresponding to the supplied file names.
+    :param directory:     path to the directory where the files are
+                          to be generated.
     """
     fpaths = []
     try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
         for fname, fcontent in zip(fnames, file_contents):
-            with open(fname, 'w', encoding='utf-8') as file:
+            fpath = os.path.join(directory, fname)
+            with open(fpath, 'w', encoding='utf-8') as file:
                 file.write(fcontent)
-            fpaths.append(os.path.join(directory, fname))
+            fpaths.append(fpath)
         yield fpaths
     finally:
         for fpath in fpaths:
