@@ -5,7 +5,7 @@ from datetime import date
 from pyprint.NullPrinter import NullPrinter
 from pyprint.ConsolePrinter import ConsolePrinter
 from coalib.output.ConsoleInteraction import acquire_settings
-from coalib.settings.SectionFilling import fill_settings
+from coala_quickstart.generation.SettingsFilling import fill_settings
 from coalib.output.printers.LogPrinter import LogPrinter
 from coala_quickstart.generation.Utilities import (
     split_by_language, get_extensions)
@@ -120,7 +120,7 @@ def generate_settings(project_dir, project_files, ignore_globs, relevant_bears,
     log_printer = LogPrinter(ConsolePrinter())
 
     if not incomplete_sections:
-        fill_settings(settings, acquire_settings, log_printer)
+        fill_settings(settings, acquire_settings, log_printer, project_dir)
 
     return settings
 

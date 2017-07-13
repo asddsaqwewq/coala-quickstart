@@ -1,4 +1,5 @@
 import os
+import unittest.mock
 from contextlib import contextmanager
 
 
@@ -26,3 +27,26 @@ def generate_files(fnames, file_contents, directory=os.getcwd()):
     finally:
         for fpath in fpaths:
             os.remove(fpath)
+
+
+@contextmanager
+def bear_test_module():
+    """
+    This function mocks the ``pkg_resources.iter_entry_points()``
+    to use the testing bear module we have. Hence, it doesn't test
+    the collection of entry points.
+    """
+    bears_test_module = os.path.join(os.path.dirname(__file__),
+                                     'test_bears', '__init__.py')
+
+    class EntryPoint:
+
+        @staticmethod
+        def load():
+            class PseudoPlugin:
+                __file__ = bears_test_module
+            return PseudoPlugin()
+
+    with unittest.mock.patch('pkg_resources.iter_entry_points',
+                             return_value=[EntryPoint()]) as mocked:
+        yield
