@@ -9,3 +9,14 @@ IMPORTANT_BEAR_LIST = {
     "JavaScript": {"JSHintBear", "JSComplexityBear"},
     "Java": {"JavaPMD", "CheckstyleBear"},
     "Python": {"PycodestyleBear"}}
+
+DEFAULT_CAPABILTIES = {
+    "Syntax",
+    "Formatting",
+    "Documentation",
+    "Redundancy",
+    "Spelling",
+    "Smell",
+    "Code Simplification",
+    "Complexity",
+}

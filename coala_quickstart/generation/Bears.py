@@ -1,9 +1,11 @@
 import copy
+import random
 import re
+from collections import defaultdict
 
 from pyprint.NullPrinter import NullPrinter
 
-from coala_quickstart.Constants import IMPORTANT_BEAR_LIST
+from coala_quickstart.Constants import IMPORTANT_BEAR_LIST, DEFAULT_CAPABILTIES
 from coala_quickstart.Strings import BEAR_HELP
 from coala_quickstart.generation.SettingsFilling import is_autofill_possible
 from coalib.settings.ConfigurationGathering import get_filtered_bears
@@ -54,12 +56,21 @@ def filter_relevant_bears(used_languages,
                 if bear.__name__ in IMPORTANT_BEAR_LIST[lang]:
                     selected_bears[lang].add(bear)
         if lang_bears and lang not in IMPORTANT_BEAR_LIST:
-            selected_bears[lang] = lang_bears
+            selected_bears[lang] = set(lang_bears)
 
         candidate_bears[lang] = set(
             [bear for bear in lang_bears
              if lang in selected_bears and
              bear not in selected_bears[lang]])
+
+    # Filter bears based on default capabilties
+    capable_candidates = {}
+    desired_capabilities = DEFAULT_CAPABILTIES
+    for lang, lang_bears in candidate_bears.items():
+        # Eliminate bears which doesn't contain the desired capabilites
+        capable_bears = get_bears_with_given_capabilities(
+            lang_bears, desired_capabilities)
+        capable_candidates[lang] = capable_bears
 
     project_dependency_info = extracted_info.get("ProjectDependencyInfo")
 
@@ -98,6 +109,29 @@ def filter_relevant_bears(used_languages,
             else:
                 # no non-optional setting, select it right away!
                 selected_bears[lang].add(bear)
+
+    # capabilities satisfied till now
+    satisfied_capabilities = get_bears_capabilties(selected_bears)
+    remaining_capabilities = {
+        lang: [cap for cap in desired_capabilities
+               if satisfied_capabilities.get(lang) and
+               cap not in satisfied_capabilities[lang]]
+        for lang in candidate_bears}
+
+    filtered_bears = {}
+    for lang, lang_bears in capable_candidates.items():
+        filtered_bears[lang] = get_bears_with_given_capabilities(
+            lang_bears, remaining_capabilities[lang])
+
+    # Remove overlapping capabilty bears
+    filtered_bears = remove_bears_with_conflicting_capabilties(
+        filtered_bears)
+    # Add to the selectecd_bears
+    for lang, lang_bears in filtered_bears.items():
+        if not selected_bears.get(lang):
+            selected_bears[lang] = lang_bears
+        else:
+            selected_bears[lang].update(lang_bears)
 
     return selected_bears
 
@@ -226,14 +260,126 @@ def get_bears_with_matching_dependencies(bears, dependency_info):
                     # No comparison can be made as the info is missing
                     matched_requirements.append(req)
 
-    result = []
+    result = set()
     for bear in bears:
         all_req_satisfied = True
         for req in bear.REQUIREMENTS:
             if req.package not in matched_requirements:
                 all_req_satisfied = False
         if bear.REQUIREMENTS and all_req_satisfied:
-            result.append(bear)
+            result.add(bear)
+    return result
+
+
+def get_bears_with_given_capabilities(bears, capabilities):
+    """
+    Returns a list of bears which contain at least one on the
+    capability in ``capabilities`` list.
+    """
+    result = set()
+    for bear in bears:
+        can_detect_caps = [c for c in list(bear.CAN_DETECT)]
+        can_fix_caps = [c for c in list(bear.CAN_FIX)]
+        eligible = False
+        for cap in capabilities:
+            if cap in can_fix_caps:
+                eligible = True
+            elif cap in can_detect_caps:
+                eligible = True
+            else:
+                continue
+        if eligible:
+            result.add(bear)
+
+    return result
+
+
+def get_bears_capabilties(bears_by_lang):
+    """
+    Return a dict of capabilties of all the bears by language
+    in the `bears_by_lang` dictionary.
+    """
+    result = {}
+    for lang, lang_bears in bears_by_lang.items():
+        result[lang] = set()
+        for bear in lang_bears:
+            for cap in bear.CAN_FIX | bear.CAN_DETECT:
+                result[lang].add(cap)
+    return result
+
+
+def generate_capabilties_map(bears_by_lang):
+    """
+    Generates a dictionary of capabilities, languages and the
+    corresponding bears from the given ``bears_by_lang`` dict.
+
+    :param bears_by_lang: dict with language names as keys
+                          and the list of bears as values.
+    :returns:             dict of the form
+                          {
+                            "language": {
+                                "detect": [list, of, bears]
+                                "fix": [list, of, bears]
+                            }
+                          }
+    """
+
+    def nested_dict():
+        return defaultdict(dict)
+    capabilities_meta = defaultdict(nested_dict)
+
+    # collectiong the capabilities meta-data
+    for lang, bears in bears_by_lang.items():
+        can_detect_meta = inverse_dicts(
+            *[{bear: list(bear.CAN_DETECT)} for bear in bears])
+        can_fix_meta = inverse_dicts(
+            *[{bear: list(bear.CAN_FIX)} for bear in bears])
+
+        for capability, bears in can_detect_meta.items():
+            capabilities_meta[capability][lang]["DETECT"] = bears
+
+        for capability, bears in can_fix_meta.items():
+            capabilities_meta[capability][lang]["FIX"] = bears
+    return capabilities_meta
+
+
+def remove_bears_with_conflicting_capabilties(bears_by_lang):
+    """
+    Eliminate bears having no unique capabilities among the other
+    bears present in the list.
+    Gives preference to:
+    - The bears already having dependencies installed.
+    - Bears that can fix the capability rather that just detecting it.
+    """
+    result = {}
+    for lang, bears in bears_by_lang.items():
+        lang_result = set()
+        capabilities_map = generate_capabilties_map({lang: bears})
+        for cap in capabilities_map.keys():
+            # bears that can fix the ``cap`` capabilitiy
+            fix_bears = capabilities_map[cap][lang].get("FIX")
+            if fix_bears:
+                for bear in fix_bears:
+                    if not bear.check_prerequisites():
+                        # The dependecies for bear are already installed,
+                        # so select it.
+                        lang_result.add(bear)
+                        break
+                # None of the bear has it's dependency installed, select
+                # a random bear.
+                lang_result.add(random.choice(fix_bears))
+                break
+            # There were no bears to fix the capability
+            detect_bears = capabilities_map[cap][lang].get("DETECT")
+            if detect_bears:
+                for bear in detect_bears:
+                    if not bear.check_prerequisites():
+                        lang_result.add(bear)
+                        break
+                lang_result.add(random.choice(detect_bears))
+                break
+        result[lang] = lang_result
+
     return result
 
 
