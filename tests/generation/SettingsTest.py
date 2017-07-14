@@ -5,7 +5,10 @@ import unittest
 from datetime import date
 from copy import deepcopy
 
+from pyprint.ConsolePrinter import ConsolePrinter
+
 from coalib.output.ConfWriter import ConfWriter
+from coala_quickstart.coala_quickstart import _get_arg_parser
 from coala_quickstart.generation.Settings import write_info, generate_settings
 from coala_quickstart.generation.Bears import filter_relevant_bears
 from coala_quickstart.generation.Project import get_used_languages
@@ -14,8 +17,11 @@ from coala_quickstart.generation.Project import get_used_languages
 class SettingsTest(unittest.TestCase):
 
     def setUp(self):
+        self.project_dir = os.getcwd()
+        self.printer = ConsolePrinter()
         self.coafile = os.path.join(tempfile.gettempdir(), '.coafile')
         self.writer = ConfWriter(self.coafile)
+        self.arg_parser = _get_arg_parser()
         self.old_argv = deepcopy(sys.argv)
         del sys.argv[1:]
 
@@ -42,10 +48,11 @@ class SettingsTest(unittest.TestCase):
         ignore_globs = []
 
         used_languages = list(get_used_languages(project_files))
-        relevant_bears = filter_relevant_bears(used_languages)
+        relevant_bears = filter_relevant_bears(
+            used_languages, self.printer, self.arg_parser, {})
 
         res = generate_settings(
-            project_dir, project_files, ignore_globs, relevant_bears, True)
+            project_dir, project_files, ignore_globs, relevant_bears, {}, True)
 
         bears_list = res["HTML"]["bears"].value.replace(" ", "").split(",")
 

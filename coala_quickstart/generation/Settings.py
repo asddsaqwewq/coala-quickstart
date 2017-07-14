@@ -68,7 +68,7 @@ def generate_ignore_field(project_dir, languages, extset, ignore_globs):
 
 
 def generate_settings(project_dir, project_files, ignore_globs, relevant_bears,
-                      incomplete_sections=False):
+                      extracted_info, incomplete_sections=False):
     """
     Generates the settings for the given project.
 
@@ -80,6 +80,9 @@ def generate_settings(project_dir, project_files, ignore_globs, relevant_bears,
         The list of ignore glob expressions.
     :param relevant_bears:
         A dict with language name as key and bear classes as value.
+    :param extracted_info:
+        A list information extracted from the project files by
+        ``InfoExtractor`` classes.
     :param incomplete_sections:
         When bears with non optional settings are found, user is asked for
         setting value of non optional bears and then a ``Section`` object
@@ -125,7 +128,7 @@ def generate_settings(project_dir, project_files, ignore_globs, relevant_bears,
                       acquire_settings,
                       log_printer,
                       fill_section_method=fill_section,
-                      project_dir=project_dir)
+                      extracted_info=extracted_info)
 
     return settings
 

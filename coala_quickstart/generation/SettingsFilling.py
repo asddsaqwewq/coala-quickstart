@@ -4,12 +4,15 @@ from coalib.bears.BEAR_KIND import BEAR_KIND
 from coalib.collecting import Dependencies
 from coalib.collecting.Collectors import collect_bears
 from coalib.settings.Setting import Setting
-from coala_quickstart.generation.InfoCollector import collect_info
 from coala_quickstart.generation.InfoMapping import INFO_SETTING_MAPS
 from coala_utils.string_processing.Core import join_names
 
 
-def fill_section(section, acquire_settings, log_printer, bears, project_dir):
+def fill_section(section,
+                 acquire_settings,
+                 log_printer,
+                 bears,
+                 extracted_info):
     """
     Retrieves needed settings from given bears and asks the user for
     missing values.
@@ -26,6 +29,8 @@ def fill_section(section, acquire_settings, log_printer, bears, project_dir):
                              who need this setting in all following indexes.
     :param log_printer:      The log printer for logging.
     :param bears:            All bear classes or instances.
+    :param extracted_info:   A list of information extracted from the project
+                             files by ``InfoExtractor`` classes.
     :return:                 The new section.
     """
     # Retrieve needed settings.
@@ -46,7 +51,6 @@ def fill_section(section, acquire_settings, log_printer, bears, project_dir):
             needed_settings[setting] = help_text
 
     # Fill the settings with existing values if possible
-    extracted_info = collect_info(project_dir)
     satisfied_settings = []
 
     for setting in needed_settings.keys():
@@ -81,8 +85,8 @@ def fill_section(section, acquire_settings, log_printer, bears, project_dir):
 
 
 def autofill_value_if_possible(setting_key,
-                               section,
-                               bear,
+                               section_name,
+                               bear_name,
                                extracted_information):
     """
     For the given setting configurations, checks if there is a
@@ -93,7 +97,7 @@ def autofill_value_if_possible(setting_key,
         for mapping in INFO_SETTING_MAPS[setting_key]:
             scope = mapping["scope"]
             if (scope.check_belongs_to_scope(
-                    section, bear)):
+                    section_name, bear_name)):
                 # look for the values in extracted information
                 # from all the ``InfoExtractor`` instances.
                 values = extracted_information.get(
@@ -103,6 +107,26 @@ def autofill_value_if_possible(setting_key,
                         if scope.check_is_applicable_information(val):
                             yield mapping["mapper_function"](val)
     return None
+
+
+def is_autofill_possible(setting_key,
+                         section_name,
+                         bear_name,
+                         extracted_info):
+    """
+    Checks if it is possible to autofill the setting values.
+    """
+    if INFO_SETTING_MAPS.get(setting_key):
+        for mapping in INFO_SETTING_MAPS[setting_key]:
+            scope = mapping["scope"]
+            if (scope.check_belongs_to_scope(
+                    section_name, bear_name)):
+                values = extracted_info.get(
+                    mapping["info_kind"].__name__)
+                for val in values:
+                    if scope.check_is_applicable_information(val):
+                        return True
+    return False
 
 
 def resolve_anomaly(setting_name,

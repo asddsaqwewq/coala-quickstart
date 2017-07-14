@@ -1,0 +1,12 @@
+{
+  "name": "awesome-packages",
+  "dependencies": {
+    "babel-eslint": "~6",
+    "eslint": "~2",
+    "eslint-plugin-import": "~1",
+    "bootlint": "~0",
+    "csslint": "~1",
+    "happiness": "~7.1.2",
+    "jshint": "~2"
+    }
+}
