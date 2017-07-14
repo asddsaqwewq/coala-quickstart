@@ -67,7 +67,7 @@ def generate_ignore_field(project_dir, languages, extset, ignore_globs):
 
 
 def generate_settings(project_dir, project_files, ignore_globs, relevant_bears,
-                      incomplete_sections=False):
+                      extracted_info, incomplete_sections=False):
     """
     Generates the settings for the given project.
 
@@ -120,7 +120,7 @@ def generate_settings(project_dir, project_files, ignore_globs, relevant_bears,
     log_printer = LogPrinter(ConsolePrinter())
 
     if not incomplete_sections:
-        fill_settings(settings, acquire_settings, log_printer, project_dir)
+        fill_settings(settings, acquire_settings, log_printer, extracted_info)
 
     return settings
 

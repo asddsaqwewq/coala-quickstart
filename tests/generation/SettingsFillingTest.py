@@ -13,6 +13,7 @@ from coalib.settings.Section import Section
 from coalib.settings.Setting import Setting
 from coala_quickstart.generation.SettingsFilling import (
     fill_section, fill_settings)
+from coala_quickstart.generation.InfoCollector import collect_info
 from tests.TestUtilities import bear_test_module, generate_files
 
 
@@ -71,7 +72,7 @@ class SettingsFillingTest(unittest.TestCase):
             fill_settings(sections,
                           acquire_settings,
                           self.log_printer,
-                          self.project_dir)
+                          {})
             self.assertEqual(generator.last_input, -1)
 
         self.section.append(Setting('bears', 'SpaceConsistencyTestBear'))
@@ -80,7 +81,7 @@ class SettingsFillingTest(unittest.TestCase):
             local_bears, global_bears = fill_settings(sections,
                                                       acquire_settings,
                                                       self.log_printer,
-                                                      self.project_dir)
+                                                      {})
             self.assertEqual(len(local_bears['test']), 1)
             self.assertEqual(len(global_bears['test']), 0)
 
@@ -97,10 +98,11 @@ class SettingsFillingTest(unittest.TestCase):
             with generate_files([".editorconfig"],
                                 [editorconfig_1],
                                 self.project_dir) as gen_files:
+                extracted_info = collect_info(self.project_dir)
                 local_bears, global_bears = fill_settings(sections,
                                                           acquire_settings,
                                                           self.log_printer,
-                                                          self.project_dir)
+                                                          extracted_info)
                 self.assertEqual(len(local_bears['test']), 1)
                 self.assertEqual(len(global_bears['test']), 0)
                 # The value for the setting is automatically taken
@@ -120,10 +122,11 @@ class SettingsFillingTest(unittest.TestCase):
             with generate_files([".editorconfig"],
                                 [editorconfig_2],
                                 self.project_dir):
+                extracted_info = collect_info(self.project_dir)
                 local_bears, global_bears = fill_settings(sections,
                                                           acquire_settings,
                                                           self.log_printer,
-                                                          self.project_dir)
+                                                          extracted_info)
                 self.assertEqual(len(local_bears['test']), 1)
                 self.assertEqual(len(global_bears['test']), 0)
 
@@ -144,7 +147,7 @@ class SettingsFillingTest(unittest.TestCase):
                                        self.log_printer,
                                        [LocalTestBear,
                                         GlobalTestBear],
-                                       self.project_dir)
+                                       {})
 
         self.assertEqual(int(new_section['local name']), 0)
         self.assertEqual(int(new_section['global name']), 0)
@@ -156,7 +159,7 @@ class SettingsFillingTest(unittest.TestCase):
                                    acquire_settings,
                                    self.log_printer,
                                    [LocalTestBear, GlobalTestBear],
-                                   self.project_dir)
+                                   {})
 
         self.assertTrue('local name' in new_section)
         self.assertTrue('global name' in new_section)
@@ -170,6 +173,6 @@ class SettingsFillingTest(unittest.TestCase):
             fill_settings(sections,
                           acquire_settings,
                           self.log_printer,
-                          self.project_dir)
+                          {})
 
         self.assertEqual(bool(self.section['use_spaces']), True)
