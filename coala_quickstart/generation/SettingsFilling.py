@@ -125,8 +125,8 @@ def fill_section(section, acquire_settings, log_printer, bears, project_dir):
 
 
 def autofill_value_if_possible(setting_key,
-                               section,
-                               bear,
+                               section_name,
+                               bear_name,
                                extracted_information):
     """
     For the given setting configurations, checks if there is a
@@ -137,7 +137,7 @@ def autofill_value_if_possible(setting_key,
         for mapping in INFO_SETTING_MAPS[setting_key]:
             scope = mapping["scope"]
             if (scope.check_belongs_to_scope(
-                    section, bear)):
+                    section_name, bear_name)):
                 # look for the values in extracted information
                 # from all the ``InfoExtractor`` instances.
                 values = extracted_information.get(
@@ -147,6 +147,26 @@ def autofill_value_if_possible(setting_key,
                         if scope.check_is_applicable_information(val):
                             yield mapping["mapper_function"](val)
     return None
+
+
+def is_autofill_possible(setting_key,
+                         section_name,
+                         bear_name,
+                         extracted_info):
+    """
+    Checks if it is possible to autofill the setting values.
+    """
+    if INFO_SETTING_MAPS.get(setting_key):
+        for mapping in INFO_SETTING_MAPS[setting_key]:
+            scope = mapping["scope"]
+            if (scope.check_belongs_to_scope(
+                    section_name, bear_name)):
+                values = extracted_info.get(
+                    mapping["info_kind"].__name__)
+                for val in values:
+                    if scope.check_is_applicable_information(val):
+                        return True
+    return False
 
 
 def resolve_anomaly(setting_name,

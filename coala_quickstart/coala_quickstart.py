@@ -71,7 +71,8 @@ def main():
     used_languages = list(get_used_languages(project_files))
     print_used_languages(printer, used_languages)
 
-    relevant_bears = filter_relevant_bears(used_languages, arg_parser)
+    relevant_bears = filter_relevant_bears(
+        used_languages, project_dir, arg_parser)
     print_relevant_bears(printer, relevant_bears)
 
     if args.non_interactive and not args.incomplete_sections:
