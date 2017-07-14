@@ -6,12 +6,11 @@ from coalib.bears.BEAR_KIND import BEAR_KIND
 from coalib.collecting import Dependencies
 from coalib.collecting.Collectors import collect_bears
 from coalib.settings.Setting import Setting
-from coala_quickstart.generation.InfoCollector import collect_info
 from coala_quickstart.generation.InfoMapping import INFO_SETTING_MAPS
 from coala_utils.string_processing.Core import join_names
 
 
-def fill_settings(sections, acquire_settings, log_printer, project_dir):
+def fill_settings(sections, acquire_settings, log_printer, extracted_info):
     """
     Retrieves all bears and requests missing settings via the given
     acquire_settings method.
@@ -45,7 +44,7 @@ def fill_settings(sections, acquire_settings, log_printer, project_dir):
         all_bears = copy.deepcopy(section_local_bears)
         all_bears.extend(section_global_bears)
         fill_section(section, acquire_settings,
-                     log_printer, all_bears, project_dir)
+                     log_printer, all_bears, extracted_info)
 
         local_bears[section_name] = section_local_bears
         global_bears[section_name] = section_global_bears
@@ -53,7 +52,11 @@ def fill_settings(sections, acquire_settings, log_printer, project_dir):
     return local_bears, global_bears
 
 
-def fill_section(section, acquire_settings, log_printer, bears, project_dir):
+def fill_section(section,
+                 acquire_settings,
+                 log_printer,
+                 bears,
+                 extracted_info):
     """
     Retrieves needed settings from given bears and asks the user for
     missing values.
@@ -90,7 +93,6 @@ def fill_section(section, acquire_settings, log_printer, bears, project_dir):
             needed_settings[setting] = help_text
 
     # Fill the settings with existing values if possible
-    extracted_info = collect_info(project_dir)
     satisfied_settings = []
 
     for setting in needed_settings.keys():

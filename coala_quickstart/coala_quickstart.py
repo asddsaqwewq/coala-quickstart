@@ -8,6 +8,7 @@ from coalib.output.printers.LogPrinter import LogPrinter
 from coala_utils.Question import ask_question
 
 from coala_quickstart.interaction.Logo import print_welcome_message
+from coala_quickstart.generation.InfoCollector import collect_info
 from coala_quickstart.generation.Project import (
     valid_path, get_used_languages, print_used_languages)
 from coala_quickstart.generation.FileGlobs import get_project_files
@@ -71,8 +72,10 @@ def main():
     used_languages = list(get_used_languages(project_files))
     print_used_languages(printer, used_languages)
 
+    extracted_information = collect_info(project_dir)
+
     relevant_bears = filter_relevant_bears(
-        used_languages, project_dir, arg_parser)
+        used_languages, printer, extracted_information, arg_parser)
     print_relevant_bears(printer, relevant_bears)
 
     if args.non_interactive and not args.incomplete_sections:

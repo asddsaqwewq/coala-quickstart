@@ -5,7 +5,6 @@ from pyprint.NullPrinter import NullPrinter
 
 from coala_quickstart.Constants import IMPORTANT_BEAR_LIST
 from coala_quickstart.Strings import BEAR_HELP
-from coala_quickstart.generation.InfoCollector import collect_info
 from coala_quickstart.generation.SettingsFilling import is_autofill_possible
 from coalib.settings.ConfigurationGathering import get_filtered_bears
 from coalib.misc.DictUtilities import inverse_dicts
@@ -13,8 +12,8 @@ from coalib.output.printers.LogPrinter import LogPrinter
 
 
 def filter_relevant_bears(used_languages,
-                          project_dir,
                           printer,
+                          extracted_info,
                           arg_parser=None):
     """
     From the bear dict, filter the bears per relevant language.
@@ -42,8 +41,6 @@ def filter_relevant_bears(used_languages,
     bears_by_lang = {lang: bears_by_lang[lang] - bears_by_lang["All"]
                      for lang, _ in used_languages}
     bears_by_lang["All"] = all_lang_bears
-
-    extracted_info = collect_info(project_dir)
 
     selected_bears = {}
     candidate_bears = copy.copy(bears_by_lang)
