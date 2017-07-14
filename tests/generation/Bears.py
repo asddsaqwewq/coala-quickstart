@@ -3,6 +3,8 @@ import sys
 import unittest
 from copy import deepcopy
 
+import pytest
+
 from pyprint.ConsolePrinter import ConsolePrinter
 from coalib.output.printers.LogPrinter import LogPrinter
 from coala_utils.ContextManagers import (
@@ -11,7 +13,8 @@ from coala_quickstart.generation.Bears import (
     filter_relevant_bears, print_relevant_bears)
 from coala_quickstart.coala_quickstart import main
 from coala_quickstart.coala_quickstart import _get_arg_parser
-from coala_quickstart.Constants import IMPORTANT_BEAR_LIST
+from coala_quickstart.Constants import (
+    IMPORTANT_BEAR_LIST, ALL_CAPABILITIES)
 from coala_quickstart.generation.InfoCollector import collect_info
 from tests.TestUtilities import bear_test_module, generate_files
 
@@ -118,7 +121,7 @@ class TestBears(unittest.TestCase):
                 self.assertIn(bear, additional_bears)
 
     def test_filter_relevant_bears_with_non_optional_settings(self):
-
+        sys.argv.append('--no-filter-by-capabilities')
         with bear_test_module():
             languages = []
             res_1 = filter_relevant_bears(
@@ -172,6 +175,33 @@ class TestBears(unittest.TestCase):
                 for bear in additional_bears_by_lang[lang]:
                     self.assertIn(bear, additional_bears)
 
+    def test_filter_relevant_bears_with_capabilities(self):
+        # Clear the IMPORTANT_BEARS_LIST
+        import coala_quickstart.generation.Bears as Bears
+        Bears.IMPORTANT_BEARS_LIST = {}
+
+        with bear_test_module():
+            languages = []
+            capability_to_select = 'Smell'
+            cap_number = (
+                sorted(ALL_CAPABILITIES).index(capability_to_select) + 1)
+            res = []
+            with simulate_console_inputs('1000', str(cap_number)) as generator:
+                res = filter_relevant_bears(languages,
+                                            self.printer,
+                                            self.arg_parser,
+                                            {})
+                # 1000 was not a valid option, so there will be two prompts
+                self.assertEqual(generator.last_input, 1)
+
+            expected_results = {
+                "All": set(["SmellCapabilityBear"])
+            }
+            for lang, lang_bears in expected_results.items():
+                for bear in lang_bears:
+                    res_bears = [b.name for b in res[lang]]
+                    self.assertIn(bear, res_bears)
+
     def test_print_relevant_bears(self):
         with retrieve_stdout() as custom_stdout:
             print_relevant_bears(self.printer, filter_relevant_bears(
@@ -203,6 +233,20 @@ class TestBears(unittest.TestCase):
                           custom_stdout.getvalue())
         os.remove('.coafile')
         os.chdir(orig_cwd)
+
+    def test_bears_no_filter_by_capability_mode(self):
+        languages = []
+        with bear_test_module():
+            # Results without filtering
+            sys.argv.append('--no-filter-by-capabilities')
+            res = []
+            with simulate_console_inputs() as generator:
+                res = filter_relevant_bears(languages,
+                                            self.printer,
+                                            self.arg_parser,
+                                            {})
+                self.assertEqual(generator.last_input, -1)
+            self.assertEqual(res, {"All": set()})
 
     def test_filter_bears_ci_mode(self):
         sys.argv.append('--ci')

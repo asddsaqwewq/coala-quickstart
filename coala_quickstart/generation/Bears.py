@@ -5,7 +5,8 @@ from collections import defaultdict
 
 from pyprint.NullPrinter import NullPrinter
 
-from coala_quickstart.Constants import IMPORTANT_BEAR_LIST, DEFAULT_CAPABILTIES
+from coala_quickstart.Constants import (
+    IMPORTANT_BEAR_LIST, ALL_CAPABILITIES, DEFAULT_CAPABILTIES)
 from coala_quickstart.Strings import BEAR_HELP
 from coala_quickstart.generation.SettingsFilling import is_autofill_possible
 from coalib.settings.ConfigurationGathering import get_filtered_bears
@@ -27,6 +28,7 @@ def filter_relevant_bears(used_languages,
     :return:
         A dict with language name as key and bear classes as value.
     """
+    args = arg_parser.parse_args() if arg_parser else None
     log_printer = LogPrinter(NullPrinter())
     used_languages.append(("All", 100))
 
@@ -63,14 +65,23 @@ def filter_relevant_bears(used_languages,
              if lang in selected_bears and
              bear not in selected_bears[lang]])
 
-    # Filter bears based on default capabilties
-    capable_candidates = {}
-    desired_capabilities = DEFAULT_CAPABILTIES
-    for lang, lang_bears in candidate_bears.items():
-        # Eliminate bears which doesn't contain the desired capabilites
-        capable_bears = get_bears_with_given_capabilities(
-            lang_bears, desired_capabilities)
-        capable_candidates[lang] = capable_bears
+    if not args.no_filter_by_capabilities:
+        # Ask user for capablities
+        user_selected_capabilities = set()
+        if not args.non_interactive:
+            user_selected_capabilities = ask_to_select_capabilties(
+                list(ALL_CAPABILITIES), list(DEFAULT_CAPABILTIES), printer)
+
+        desired_capabilities = (
+            user_selected_capabilities if user_selected_capabilities
+            else DEFAULT_CAPABILTIES)
+
+        # Filter bears based on capabilties
+        for lang, lang_bears in candidate_bears.items():
+            # Eliminate bears which doesn't contain the desired capabilites
+            capable_bears = get_bears_with_given_capabilities(
+                lang_bears, desired_capabilities)
+            candidate_bears[lang] = capable_bears
 
     project_dependency_info = extracted_info.get("ProjectDependencyInfo")
 
@@ -97,11 +108,9 @@ def filter_relevant_bears(used_languages,
                         user_input_reqd = True
                         break
 
-                args = arg_parser.parse_args()
-
                 if user_input_reqd:
                     # Ask user to activate the bear
-                    if (not args.non_interactive and
+                    if (args and not args.non_interactive and
                             prompt_to_activate(bear, printer)):
                         selected_bears[lang].add(bear)
                 else:
@@ -111,28 +120,30 @@ def filter_relevant_bears(used_languages,
                 # no non-optional setting, select it right away!
                 selected_bears[lang].add(bear)
 
-    # capabilities satisfied till now
-    satisfied_capabilities = get_bears_capabilties(selected_bears)
-    remaining_capabilities = {
-        lang: [cap for cap in desired_capabilities
-               if satisfied_capabilities.get(lang) and
-               cap not in satisfied_capabilities[lang]]
-        for lang in candidate_bears}
+    if not args.no_filter_by_capabilities:
+        # capabilities satisfied till now
+        satisfied_capabilities = get_bears_capabilties(selected_bears)
+        remaining_capabilities = {
+            lang: [cap for cap in desired_capabilities
+                   if lang in satisfied_capabilities and
+                   cap not in satisfied_capabilities[lang]]
+            for lang in candidate_bears}
 
-    filtered_bears = {}
-    for lang, lang_bears in capable_candidates.items():
-        filtered_bears[lang] = get_bears_with_given_capabilities(
-            lang_bears, remaining_capabilities[lang])
+        filtered_bears = {}
+        for lang, lang_bears in candidate_bears.items():
+            filtered_bears[lang] = get_bears_with_given_capabilities(
+                lang_bears, remaining_capabilities[lang])
 
-    # Remove overlapping capabilty bears
-    filtered_bears = remove_bears_with_conflicting_capabilties(
-        filtered_bears)
-    # Add to the selectecd_bears
-    for lang, lang_bears in filtered_bears.items():
-        if not selected_bears.get(lang):
-            selected_bears[lang] = lang_bears
-        else:
-            selected_bears[lang].update(lang_bears)
+        # Remove overlapping capabilty bears
+        filtered_bears = remove_bears_with_conflicting_capabilties(
+            filtered_bears)
+
+        # Add to the selectecd_bears
+        for lang, lang_bears in filtered_bears.items():
+            if not selected_bears.get(lang):
+                selected_bears[lang] = lang_bears
+            else:
+                selected_bears[lang].update(lang_bears)
 
     return selected_bears
 
@@ -418,3 +429,52 @@ def prompt_to_activate(bear, printer):
         return False
     else:
         return prompt_to_activate(bear, printer)
+
+
+def ask_to_select_capabilties(all_capabilities,
+                              default_capabilities,
+                              console_printer):
+    """
+    Asks the users to select capabilties out of all_capabilities.
+    """
+    all_capabilities = sorted(all_capabilities)
+    indentation = " " * 4
+    PROMPT_QUESTION = ("What would you like the bears to detect or fix? "
+                       "Please select some bear capabilities using "
+                       "their numbers:")
+    console_printer.print(PROMPT_QUESTION, color="yellow")
+
+    for idx, cap in enumerate(all_capabilities):
+        color = 'cyan'
+        if cap in default_capabilities:
+            color = 'green'
+        console_printer.print(
+            indentation + str(idx + 1) + '.' + cap, color=color)
+    console_printer.print(
+        indentation + str(idx + 2) + '.' + "Select all default capabilities " +
+        "(highlighted in green)",
+        color="cyan")
+
+    selected_numbers = []
+    try:
+        selected_numbers = re.split("\D+", input())
+    except Exception:
+        # Parsing failed, choose all the default capabilities
+        selected_numbers = [idx + 2]
+
+    selected_capabilties = []
+    for idx in selected_numbers:
+        try:
+            selected_capabilties.append(all_capabilities[int(idx)-1])
+        except IndexError:
+            if int(idx) - 1 == len(all_capabilities):
+                selected_capabilties += default_capabilities
+            else:
+                console_printer.print(
+                    "{} is not a valid option. Please choose the right"
+                    " option numbers".format(str(idx)))
+                ask_to_select_capabilties(all_capabilities,
+                                          default_capabilities,
+                                          console_printer)
+
+    return set(selected_capabilties)
