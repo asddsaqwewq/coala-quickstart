@@ -10,6 +10,27 @@ IMPORTANT_BEAR_LIST = {
     "Java": {"JavaPMD", "CheckstyleBear"},
     "Python": {"PycodestyleBear"}}
 
+ALL_CAPABILITIES = {
+    'Code Simplification',
+    'Commented Code',
+    'Complexity',
+    'Documentation',
+    'Duplication',
+    'Formatting',
+    'Grammar',
+    'Memory Leak',
+    'Missing Import',
+    'Redundancy',
+    'Security',
+    'Smell',
+    'Spelling',
+    'Syntax',
+    'Undefined Element',
+    'Unreachable Code',
+    'Unused Code',
+    'Variable Misuse'
+}
+
 DEFAULT_CAPABILTIES = {
     "Syntax",
     "Formatting",

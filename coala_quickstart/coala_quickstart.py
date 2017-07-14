@@ -45,6 +45,11 @@ coala-quickstart automatically creates a .coafile for use by coala.
         dest='incomplete_sections', const=True,
         help='generate coafile with only `bears` and `files` field in sections')
 
+    arg_parser.add_argument(
+        '--no-filter-by-capabilities', action='store_const',
+        dest='no_filter_by_capabilities', const=True,
+        help='disable filtering of bears by their capabilties.')
+
     return arg_parser
 
 
