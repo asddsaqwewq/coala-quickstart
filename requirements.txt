@@ -1,3 +1,3 @@
-coala_bears~=0.11
+coala_bears~=0.12.0.dev20170722110839
 coala_utils~=0.4
 gemfileparser~=0.6.2
