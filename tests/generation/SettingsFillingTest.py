@@ -225,6 +225,20 @@ class SettingsFillingTest(unittest.TestCase):
 
         self.assertEqual(bool(self.section['use_spaces']), False)
 
+    def test_language_setting_autofill(self):
+        self.section = Section('ruby')
+        sections = {'ruby': self.section}
+        self.section.append(Setting('bears', 'LanguageSettingBear'))
+
+        with simulate_console_inputs() as generator, bear_test_module():
+            local_bears, global_bears = fill_settings(
+                sections, acquire_settings, self.log_printer,
+                fill_section_method=fill_section,
+                extracted_info={})
+            self.assertEqual(generator.last_input, -1)
+
+        self.assertEqual(str(self.section['language']), 'ruby')
+
     def test_dependency_resolving(self):
         sections = {'test': self.section}
         self.section['bears'] = 'DependentBear'

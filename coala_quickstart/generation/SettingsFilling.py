@@ -267,7 +267,13 @@ def acquire_settings(log_printer, settings_dict, section):
     for setting_name, setting_info in sorted(
             settings_dict.items(),
             key=lambda x: (join_names(x[1]["bears"]), x[0])):
-        value = require_setting(setting_name, setting_info, section)
+        # As quickstart generates language-based sections, the value for
+        # `language` setting can be filled automatically.
+        if setting_name == "language":
+            value = section.name
+        else:
+            value = require_setting(setting_name, setting_info, section)
+
         result.update({setting_name: value} if value is not None else {})
 
     return result
