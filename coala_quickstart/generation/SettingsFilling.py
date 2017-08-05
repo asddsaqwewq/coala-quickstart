@@ -32,27 +32,31 @@ def fill_section(section,
     """
     # Retrieve needed settings.
     prel_needed_settings = {}
+
     for bear in bears:
         needed = bear.get_non_optional_settings()
         for key in needed:
             if key in prel_needed_settings:
-                prel_needed_settings[key].append(bear.name)
+                prel_needed_settings[key]["bears"].append(bear.name)
             else:
-                prel_needed_settings[key] = [needed[key][0],
-                                             bear.name]
+                prel_needed_settings[key] = {
+                    "help_text": needed[key][0],
+                    "bears": [bear.name],
+                    "type": needed[key][1],
+                }
 
     # Strip away existent settings.
     needed_settings = {}
-    for setting, help_text in prel_needed_settings.items():
+    for setting, setting_info in prel_needed_settings.items():
         if setting not in section:
-            needed_settings[setting] = help_text
+            needed_settings[setting] = setting_info
 
     # Fill the settings with existing values if possible
     satisfied_settings = []
 
     for setting in needed_settings.keys():
         to_fill_values = list(autofill_value_if_possible(
-            setting, section.name, needed_settings[setting][1:],
+            setting, section.name, needed_settings[setting]["bears"],
             extracted_info))
 
         if len(set(to_fill_values)) == 1:
@@ -60,10 +64,9 @@ def fill_section(section,
             satisfied_settings.append(setting)
 
         elif len(to_fill_values) > 1:
-            section[setting] = resolve_anomaly(setting,
-                                               needed_settings[setting][0],
-                                               needed_settings[setting][1:],
-                                               to_fill_values)
+            section[setting] = resolve_anomaly(
+                setting, needed_settings[setting]["help_text"],
+                needed_settings[setting]["bears"], to_fill_values)
             satisfied_settings.append(setting)
 
         else:
@@ -165,3 +168,91 @@ def resolve_anomaly(setting_name,
                                                    join_names(values)),
                   REPORT_ANOMALY_COLOR))
     return input()
+
+
+def require_setting(setting_name, setting_info, section):
+    """
+    This method is responsible for prompting a user about a missing setting and
+    taking its value as input from the user.
+
+    :param setting_name: Name of the setting missing
+    :param setting_info: A dictionary of the form
+
+    ::
+        {
+            "help_text": "help string for the setting",
+            "bears": [SomeBear", "SomeOtherBear"],
+            "type": bool
+        }
+
+    :param section:      The section the action corresponds to.
+    """
+    needed = join_names(setting_info["bears"])
+
+    STR_GET_VAL_FOR_SETTING = ('\nPlease enter a value for the setting \"{}\" '
+                               '({}) needed by {} for section \"{}\": ')
+
+    STR_REPORT_INVALID_VALUE_TYPE = ('coala-quickstart was unable to convert '
+                                     'your input to the type {} required for '
+                                     'the setting.')
+
+    REQUIRED_SETTINGS_COLOR = 'green'
+    REPORT_INVALID_TYPE_COLOR = 'cyan'
+
+    print(colored(STR_GET_VAL_FOR_SETTING.format(setting_name,
+                                                 setting_info["help_text"],
+                                                 needed,
+                                                 section.name),
+                  REQUIRED_SETTINGS_COLOR))
+
+    user_input = input()
+
+    if setting_info["type"]:
+        try:
+            user_input = setting_info["type"](user_input)
+        except ValueError:
+            print(colored(
+                STR_REPORT_INVALID_VALUE_TYPE.format(setting_info["type"]),
+                REPORT_INVALID_TYPE_COLOR))
+            return require_setting(setting_name, setting_info, section)
+
+    return user_input
+
+
+def acquire_settings(log_printer, settings_dict, section):
+    """
+    This method prompts the user for the given settings.
+
+    :param log_printer:
+        Printer responsible for logging the messages. This is needed to comply
+        with the interface.
+    :param settings_names_dict:
+        A dictionary with the settings name as key of the following form
+
+    ::
+
+        {
+          "some_setting": {
+              "help_text": "help string for the setting",
+              "bears": [SomeBear", "SomeOtherBear"],
+              "type": bool
+        }
+
+    :param section:
+        The section the action corresponds to.
+    :return:
+        A dictionary with the settings name as key and the given value as
+        value.
+    """
+    if not isinstance(settings_dict, dict):
+        raise TypeError('The settings_names_dict parameter has to be a '
+                        'dictionary.')
+
+    result = {}
+    for setting_name, setting_info in sorted(
+            settings_dict.items(),
+            key=lambda x: (join_names(x[1]["bears"]), x[0])):
+        value = require_setting(setting_name, setting_info, section)
+        result.update({setting_name: value} if value is not None else {})
+
+    return result

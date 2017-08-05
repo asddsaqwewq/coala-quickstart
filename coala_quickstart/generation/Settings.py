@@ -4,9 +4,9 @@ from datetime import date
 
 from pyprint.NullPrinter import NullPrinter
 from pyprint.ConsolePrinter import ConsolePrinter
-from coalib.output.ConsoleInteraction import acquire_settings
 from coalib.settings.SectionFilling import fill_settings
-from coala_quickstart.generation.SettingsFilling import fill_section
+from coala_quickstart.generation.SettingsFilling import (
+    fill_section, acquire_settings)
 from coalib.output.printers.LogPrinter import LogPrinter
 from coala_quickstart.generation.Utilities import (
     split_by_language, get_extensions)

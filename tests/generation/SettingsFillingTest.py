@@ -7,12 +7,13 @@ from coalib.bears.GlobalBear import GlobalBear
 from coalib.bears.LocalBear import LocalBear
 from coala_utils.ContextManagers import (
     simulate_console_inputs, retrieve_stdout)
-from coalib.output.ConsoleInteraction import acquire_settings
+# from coalib.output.ConsoleInteraction import acquire_settings
 from coalib.output.printers.LogPrinter import LogPrinter
 from coalib.settings.Section import Section
 from coalib.settings.Setting import Setting
 from coalib.settings.SectionFilling import fill_settings
-from coala_quickstart.generation.SettingsFilling import fill_section
+from coala_quickstart.generation.SettingsFilling import (
+    fill_section, acquire_settings)
 from coala_quickstart.generation.InfoCollector import collect_info
 from tests.TestUtilities import bear_test_module, generate_files
 
@@ -43,8 +44,8 @@ class GlobalTestBear(GlobalBear):
 
     @staticmethod
     def get_non_optional_settings():
-        return {'global name': 'global help text',
-                'key': 'this setting does exist'}
+        return {'global name': ('global help text', int),
+                'key': ('this setting does exist', int)}
 
 
 class LocalTestBear(LocalBear):
@@ -54,8 +55,8 @@ class LocalTestBear(LocalBear):
 
     @staticmethod
     def get_non_optional_settings():
-        return {'local name': 'local help text',
-                'global name': 'this setting is needed by two bears'}
+        return {'local name': ('local help text', int),
+                'global name': ('this setting is needed by two bears', int)}
 
 
 class SettingsFillingTest(unittest.TestCase):
@@ -166,6 +167,21 @@ class SettingsFillingTest(unittest.TestCase):
 
         self.assertTrue('local name' in new_section)
         self.assertTrue('global name' in new_section)
+        self.assertEqual(new_section['key'].value, 'val')
+        self.assertEqual(len(new_section.contents), 3)
+
+    def test_fill_section_invalid_type(self):
+        with simulate_console_inputs("fd", "fd", 0, 0) as generator:
+            new_section = fill_section(self.section,
+                                       acquire_settings,
+                                       self.log_printer,
+                                       [LocalTestBear,
+                                        GlobalTestBear],
+                                       {})
+            self.assertEqual(generator.last_input, 3)
+
+        self.assertEqual(int(new_section['local name']), 0)
+        self.assertEqual(int(new_section['global name']), 0)
         self.assertEqual(new_section['key'].value, 'val')
         self.assertEqual(len(new_section.contents), 3)
 
