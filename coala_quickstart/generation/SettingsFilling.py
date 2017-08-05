@@ -1,6 +1,9 @@
+import re
+
 from termcolor import colored
 
 from coalib.settings.Setting import Setting
+from coalib.misc.Constants import TRUE_STRINGS, FALSE_STRINGS
 from coala_quickstart.generation.InfoMapping import INFO_SETTING_MAPS
 from coala_utils.string_processing.Core import join_names
 
@@ -208,8 +211,20 @@ def require_setting(setting_name, setting_info, section):
     user_input = input()
 
     if setting_info["type"]:
+
         try:
-            user_input = setting_info["type"](user_input)
+            if setting_info["type"] is bool:
+                processed_input = " ".join(re.findall("[a-zA-Z0-9\-]+",
+                                                      user_input.lower()))
+                if processed_input in TRUE_STRINGS:
+                    user_input = "True"
+                elif processed_input in FALSE_STRINGS:
+                    user_input = "False"
+                else:
+                    raise ValueError
+            else:
+                setting_info["type"](user_input)
+
         except ValueError:
             print(colored(
                 STR_REPORT_INVALID_VALUE_TYPE.format(setting_info["type"]),
