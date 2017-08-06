@@ -1,4 +1,5 @@
-coala_bears~=0.12.0.dev20170722110839
+lxml==3.6.0
+coala_bears~=0.12.0.dev20170803195456
 coala_utils~=0.4
 gemfileparser~=0.6.2
 pyjsparser~=2.4.5
