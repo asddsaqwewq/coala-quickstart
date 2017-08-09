@@ -1,6 +1,6 @@
 #TODO: Remove lxml once the upstream issue https://github.com/vfaronov/httpolice/issues/5 with HTTpolice is fixed.
 lxml==3.6.0
 coala_bears~=0.12.0.dev20170722110839
-coala_utils~=0.4
+git+https://gitlab.com/coala/coala-utils.git
 gemfileparser~=0.6.2
 pyjsparser~=2.4.5
