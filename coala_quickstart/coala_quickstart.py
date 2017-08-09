@@ -7,6 +7,7 @@ from pyprint.ConsolePrinter import ConsolePrinter
 
 from coalib.output.printers.LogPrinter import LogPrinter
 
+from coala_utils.FilePathCompleter import FilePathCompleter
 from coala_utils.Question import ask_question
 
 from coala_quickstart.interaction.Logo import print_welcome_message
@@ -63,18 +64,24 @@ def main():
     printer = ConsolePrinter()
     log_printer = LogPrinter(printer)
 
+    fpc = None
     project_dir = os.getcwd()
+
     if not args.non_interactive:
+        fpc = FilePathCompleter()
+        fpc.activate()
         print_welcome_message(printer)
         project_dir = ask_question(
             "What is your project directory?",
             default=project_dir,
             typecast=valid_path)
+        fpc.deactivate()
 
     project_files, ignore_globs = get_project_files(
         log_printer,
         printer,
         project_dir,
+        fpc,
         args.non_interactive)
 
     used_languages = list(get_used_languages(project_files))

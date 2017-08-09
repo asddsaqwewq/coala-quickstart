@@ -5,6 +5,7 @@ from pyprint.ConsolePrinter import ConsolePrinter
 from coalib.output.printers.LogPrinter import LogPrinter
 from coala_utils.ContextManagers import (
     simulate_console_inputs, suppress_stdout)
+from coala_utils.FilePathCompleter import FilePathCompleter
 from coala_quickstart.generation.FileGlobs import get_project_files
 from coala_quickstart.generation.Utilities import get_gitignore_glob
 from coalib.collecting.Collectors import collect_files
@@ -15,6 +16,7 @@ class TestQuestion(unittest.TestCase):
     def setUp(self):
         self.printer = ConsolePrinter()
         self.log_printer = LogPrinter(self.printer)
+        self.file_path_completer = FilePathCompleter()
 
     def test_get_project_files(self):
         orig_cwd = os.getcwd()
@@ -30,8 +32,10 @@ class TestQuestion(unittest.TestCase):
         open(os.path.join("ignore_dir", "src.js"), "w").close()
 
         with suppress_stdout(), simulate_console_inputs("ignore_dir/**"):
-            res, _ = get_project_files(
-                self.log_printer, self.printer, os.getcwd())
+            res, _ = get_project_files(self.log_printer,
+                                       self.printer,
+                                       os.getcwd(),
+                                       self.file_path_completer)
             self.assertIn(os.path.normcase(
                 os.path.join(os.getcwd(), "src", "file.c")), res)
             self.assertIn(os.path.normcase(
@@ -95,8 +99,10 @@ __pycache__
 
         with suppress_stdout():
             self.assertEqual(
-                sorted(get_project_files(
-                    self.log_printer, self.printer, os.getcwd())[0]),
+                sorted(get_project_files(self.log_printer,
+                                         self.printer,
+                                         os.getcwd(),
+                                         self.file_path_completer)[0]),
                 sorted(files))
 
         os.remove(".gitignore")
@@ -108,8 +114,11 @@ __pycache__
                  os.sep + "file_globs_ci_testfiles")
 
         with suppress_stdout():
-            res, _ = get_project_files(
-                self.log_printer, self.printer, os.getcwd(), True)
+            res, _ = get_project_files(self.log_printer,
+                                       self.printer,
+                                       os.getcwd(),
+                                       self.file_path_completer,
+                                       True)
 
             paths = [
                 os.path.join(os.getcwd(), "src", "file.c"),

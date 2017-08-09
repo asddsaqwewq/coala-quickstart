@@ -7,7 +7,11 @@ from coala_quickstart.Strings import GLOB_HELP
 from coalib.collecting.Collectors import collect_files
 
 
-def get_project_files(log_printer, printer, project_dir, non_interactive=False):
+def get_project_files(log_printer,
+                      printer,
+                      project_dir,
+                      file_path_completer,
+                      non_interactive=False):
     """
     Gets the list of files matching files in the user's project directory
     after prompting for glob expressions.
@@ -16,6 +20,8 @@ def get_project_files(log_printer, printer, project_dir, non_interactive=False):
         A ``LogPrinter`` object.
     :param printer:
         A ``ConsolePrinter`` object.
+    :param file_path_completer:
+        A ``file_path_completer`` object.
     :param non_interactive
         Whether coala-quickstart is in non-interactive mode
     :return:
@@ -29,16 +35,18 @@ def get_project_files(log_printer, printer, project_dir, non_interactive=False):
                       "will be automatically loaded as the files to ignore.",
                       color="green")
         ignore_globs = get_gitignore_glob(project_dir)
-
     if non_interactive and not ignore_globs:
         ignore_globs = []
 
     if ignore_globs is None:
         printer.print(GLOB_HELP)
+        file_path_completer.activate(seed_dir=project_dir)
         ignore_globs = ask_question(
-            "Which files do you want coala to ignore?",
+            "Which files do you want coala to ignore inside the "
+            "project directory?",
             printer=printer,
             typecast=list)
+        file_path_completer.deactivate()
     printer.print()
 
     escaped_project_dir = glob_escape(project_dir)
